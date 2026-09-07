@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Galaxia de partículas</title>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #020014;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    #fraseGrande {
+      position: fixed;
+      z-index: 10;
+      top: 50%;
+      left: 50%;
+      width: 80%;
+      padding: 30px;
+      color: white;
+      text-align: center;
+      font-size: clamp(24px, 5vw, 52px);
+      font-weight: bold;
+      line-height: 1.2;
+      background: rgba(20, 10, 70, 0.95);
+      border: 2px solid #d8b4ff;
+      border-radius: 25px;
+      box-shadow: 0 0 20px #b56cff, 0 0 60px #713cff;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(0);
+      transition: 0.4s ease;
+    }
+
+    #fraseGrande.mostrar {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    #cerrar,
+    #botonMusica {
+      position: fixed;
+      z-index: 20;
+      padding: 10px 16px;
+      color: white;
+      background: #7b3cff;
+      border: 0;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 0 15px #b56cff;
+    }
+
+    #cerrar {
+      top: 20px;
+      right: 20px;
+      display: none;
+    }
+
+    #botonMusica {
+      bottom: 20px;
+      left: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="galaxia"></canvas>
+
+  <div id="fraseGrande"></div>
+
+  <button id="cerrar">Cerrar</button>
+  <button id="botonMusica">🎵 Reproducir música</button>
+
+  <!-- Coloca musica.mp3 junto a este archivo HTML -->
+  <audio id="musica" loop>
+    <source src="musica.mp3" type="audio/mpeg">
+    Tu navegador no admite audio.
+  </audio>
+
+  <script>
+    const canvas = document.getElementById("galaxia");
+    const ctx = canvas.getContext("2d");
+
+    const fraseGrande = document.getElementById("fraseGrande");
+    const botonCerrar = document.getElementById("cerrar");
+    const musica = document.getElementById("musica");
+    const botonMusica = document.getElementById("botonMusica");
+
+    let ancho;
+    let alto;
+    let centroX;
+    let centroY;
+
+    function ajustarCanvas() {
+      const escala = window.devicePixelRatio || 1;
+
+      ancho = window.innerWidth;
+      alto = window.innerHeight;
+
+      canvas.width = ancho * escala;
+      canvas.height = alto * escala;
+
+      canvas.style.width = ancho + "px";
+      canvas.style.height = alto + "px";
+
+      ctx.setTransform(escala, 0, 0, escala, 0, 0);
+
+      centroX = ancho / 2;
+      centroY = alto / 2;
+    }
+
+    ajustarCanvas();
+    window.addEventListener("resize", ajustarCanvas);
+
+    const particulas = [];
+    const cantidadParticulas = 2200;
+
+    for (let i = 0; i < cantidadParticulas; i++) {
+      particulas.push({
+        angulo: Math.random() * Math.PI * 2,
+        distancia: Math.random() ** 2 * 420,
+        velocidad: 0.0008 + Math.random() * 0.0025,
+        tamaño: Math.random() * 2 + 0.5,
+        color: Math.random() > 0.5
+          ? "rgba(120, 190, 255, 0.9)"
+          : "rgba(255, 170, 230, 0.9)"
+      });
+    }
+
+    const frases = [
+      "Eres la mujer más linda de este universo ✨",
+      "Nunca dejes de ser tú misma 🌟",
+      "Tú iluminas toda mi galaxia 🤍",
+      "Eres tan especial como un árbol 🌙",
+      "Te amo mucho, mi zorrita 🚀",
+      "En un mundo lleno de novios, yo quiero que seas mi girlfriend 💫"
+    ];
+
+    const textos = [];
+
+    frases.forEach((texto, indice) => {
+      textos.push({
+        texto: texto,
+        angulo: indice * Math.PI * 2 / frases.length,
+        distancia: 130 + (indice % 3) * 95,
+        velocidad: 0.0015,
+        tamaño: 15 + (indice % 3) * 2,
+        x: 0,
+        y: 0,
+        ancho: 0,
+        alto: 0
+      });
+    });
+
+    function dibujarFondo() {
+      ctx.fillStyle = "#020014";
+      ctx.fillRect(0, 0, ancho, alto);
+
+      const fondo = ctx.createRadialGradient(
+        centroX,
+        centroY,
+        0,
+        centroX,
+        centroY,
+        Math.max(ancho, alto) * 0.7
+      );
+
+      fondo.addColorStop(0, "rgba(50, 30, 130, 0.45)");
+      fondo.addColorStop(0.5, "rgba(10, 5, 60, 0.3)");
+      fondo.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+      ctx.fillStyle = fondo;
+      ctx.fillRect(0, 0, ancho, alto);
+    }
+
+    function dibujarParticulas() {
+      particulas.forEach((particula) => {
+        particula.angulo += particula.velocidad;
+
+        const curva = particula.distancia * 0.018;
+        const anguloFinal = particula.angulo + curva;
+
+        const x = centroX +
+          Math.cos(anguloFinal) * particula.distancia;
+
+        const y = centroY +
+          Math.sin(anguloFinal) *
+          particula.distancia * 0.48;
+
+        ctx.fillStyle = particula.color;
+
+        ctx.beginPath();
+        ctx.arc(x, y, particula.tamaño, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function dibujarCentro() {
+      ctx.save();
+
+      ctx.translate(centroX, centroY);
+
+      ctx.fillStyle = "white";
+      ctx.shadowColor = "#ffffff";
+      ctx.shadowBlur = 25;
+
+      ctx.beginPath();
+
+      ctx.moveTo(0, 15);
+
+      ctx.bezierCurveTo(
+        -45, -15,
+        -32, -48,
+        0, -25
+      );
+
+      ctx.bezierCurveTo(
+        32, -48,
+        45, -15,
+        0, 15
+      );
+
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function dibujarFrases() {
+      textos.forEach((objeto) => {
+        objeto.angulo += objeto.velocidad;
+
+        objeto.x = centroX +
+          Math.cos(objeto.angulo) * objeto.distancia;
+
+        objeto.y = centroY +
+          Math.sin(objeto.angulo) *
+          objeto.distancia * 0.48;
+
+        ctx.font = `bold ${objeto.tamaño}px Arial`;
+
+        objeto.ancho = ctx.measureText(objeto.texto).width;
+        objeto.alto = objeto.tamaño + 20;
+
+        ctx.save();
+
+        ctx.fillStyle = "white";
+        ctx.shadowColor = "#dfadff";
+        ctx.shadowBlur = 12;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.fillText(objeto.texto, objeto.x, objeto.y);
+
+        ctx.restore();
+      });
+    }
+
+    function animar() {
+      dibujarFondo();
+      dibujarParticulas();
+      dibujarCentro();
+      dibujarFrases();
+
+      requestAnimationFrame(animar);
+    }
+
+    canvas.addEventListener("click", (evento) => {
+      const rect = canvas.getBoundingClientRect();
+
+      const mouseX = evento.clientX - rect.left;
+      const mouseY = evento.clientY - rect.top;
+
+      textos.forEach((objeto) => {
+        const clicEnFrase =
+          mouseX >= objeto.x - objeto.ancho / 2 &&
+          mouseX <= objeto.x + objeto.ancho / 2 &&
+          mouseY >= objeto.y - objeto.alto / 2 &&
+          mouseY <= objeto.y + objeto.alto / 2;
+
+        if (clicEnFrase) {
+          fraseGrande.textContent = objeto.texto;
+          fraseGrande.classList.add("mostrar");
+          botonCerrar.style.display = "block";
+        }
+      });
+    });
+
+    botonCerrar.addEventListener("click", () => {
+      fraseGrande.classList.remove("mostrar");
+      botonCerrar.style.display = "none";
+    });
+
+    botonMusica.addEventListener("click", () => {
+      if (musica.paused) {
+        musica.play();
+        botonMusica.textContent = "⏸️ Pausar música";
+      } else {
+        musica.pause();
+        botonMusica.textContent = "🎵 Reproducir música";
+      }
+    });
+
+    musica.volume = 0.5;
+
+    animar();
+  </script>
+</body>
+</html>
